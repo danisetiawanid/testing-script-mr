@@ -84,8 +84,13 @@ get_target_mr() {
             break
         fi
 
-        ## Clear char control U+0000–U+001F
-        clean_body=$(echo "$body" | tr -d '\000-\031')
+        ## Clear char control U+0000–U+001F using python to avoid "jq" parse errors
+        clean_body=$(python3 - <<'PY' <<<"$body"
+import re, sys
+data = sys.stdin.read()
+print(re.sub(r"[\x00-\x1f]", "", data))
+PY
+        )
 
         ## Check valid JSON
         if ! echo "$clean_body" | jq empty 2>/dev/null; then
